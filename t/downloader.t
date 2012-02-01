@@ -5,7 +5,8 @@ use strict ;
 use Test::More qw( no_plan ); 
 use downloader ; 
 
-
+mkdir "./test" ; 
+chdir "./test" ; 
 #TODO: {
 #   local $TODO = 'to do list' ; 
 #   ok( ParseDesFile ) ; 
@@ -35,7 +36,7 @@ ok( GetFtpUrlFileType("ftp://localhost/bin/sh") eq "f" ) ;
 
 
 
-ok( GetRemoteFileSize("ai-imci-control00.ai01:/bin/bash") eq 752272 , "localhost:/bin/bash is 752272 Byte.") ; 
+ok( GetRemoteFileSize("localhost:/bin/bash") eq 752272 , "localhost:/bin/bash is 752272 Byte.") ; 
 
 my $test_file_1 = do { local $/ ; <DATA> } ;
 
@@ -62,6 +63,9 @@ open(F, ">$file") || die "Can't create '$file': $!";
 binmode(F);
 print F "this is another test file" ;
 close(F) || die "Can't write '$file': $!";
+
+chdir "../" ; 
+#system("rm -rf test") ; 
 
 __DATA__
 this is a test file.

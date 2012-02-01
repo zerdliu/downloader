@@ -17,6 +17,7 @@ use File::stat ;
 use File::Compare ;
 use File::Copy;
 use Net::FTP ;
+use IO::File ; 
 
 our $download_rate = 10 ; 
 
@@ -254,7 +255,7 @@ sub CheckMd5 {
     my $cmd ; 
 
     if ( -f $deploy_path ) { 
-        $cmd = "cd $dirname && md5sum -c $md5_file" if ( -f $deploy_path ) ; 
+        $cmd = "cd $dirname && md5sum -c $md5_file" ; 
     } elsif ( -d $deploy_path ) {
         $cmd = "cd $deploy_path && cp ../$md5_file ./ && md5sum -c $md5_file" ; 
     }
@@ -266,38 +267,58 @@ sub CheckMd5 {
 sub GetRemoteFileSize {
    my ($scp_url)=@_;  
    my $ftp ;
-   my $size = 0 ;
+   my $size ;
 
    my @scp_url = split(/:/, $scp_url) ;
    my $server = $scp_url[0] ; 
    my $path = $scp_url[1] ; 
 
+   WriteLog("write log ok.") ; 
    my $try = 0 ;
-   while ( $try < 15 ) {
-   eval {
-      $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot login", $ftp->message ;
-      $ftp->login("anonymous",'-anonymous@') or die "Cannot login", $ftp->message ;
-      $ftp->binary() or die "Cannot binary", $ftp->message ;
-
-      my @files = $ftp->ls("$path") ;
-      #print Dumper \@files ;
-      foreach my $file (@files) {
-          $size += ( $ftp->size("$file") || 0 ) ;
-      }
-   #print Dumper $size ;
-      $ftp->quit;
-   } ;  
-   $@ ? print $@ : return $size ;
-   sleep(4) ;
-   $try ++ ;
+   while ( $try < 5 ) {
+       eval {
+          $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot login:", $ftp->message ;
+          $ftp->login("anonymous",'-anonymous@') or die "Cannot login:", $ftp->message ;
+          $ftp->binary() or die "Cannot binary:", $ftp->message ;
+    
+          my @files = $ftp->ls("$path") ;
+          die "No such file: $scp_url" unless (@files) ;
+          foreach my $file (@files) {
+              $size += ( $ftp->size("$file") || 0 ) ;
+          }
+          $ftp->quit;
+       } ;  
+    
+       return $size unless $@ ; 
+       if ( $@ =~ /No such file/) {
+           WriteLog("FATAL: $@") ; 
+           $size = undef ; 
+       } else {
+           WriteLog("WARNING: Cannot Connect $server. $@") ; 
+           $size = undef ; 
+       } 
+       sleep(4) ;
+       $try ++ ;
    }
    return $size ; 
 }
 
 sub WriteLog {
     my ($msg) = @_ ; 
-    print "$msg\n" ; 
+    chomp $msg ;  
+    my $log_fh = IO::File->new ; 
+    $log_fh->open("./downloader.log",">>") ; 
+    $log_fh->print(GetLogDate() . " " . $msg . "\n") ; 
+    $log_fh->close ; 
 }
+
+sub GetLogDate {
+    my $date = `date +\%F" "\%T` ; 
+    chomp $date ; 
+    $date = "[$date]" ; 
+    return scalar $date ; 
+}
+
 
 1; 
 __END__
