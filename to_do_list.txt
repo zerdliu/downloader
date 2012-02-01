@@ -1,0 +1,56 @@
+
+
+. --test=1,2参数
+   . 1：yaml格式检查。label重合需要检查出来
+   . 2：yaml文件中的地址是否可下载
+   . 是否可用TEST::MORE实现
+
+. 超时的报警，参数可选
+
+. 异常判断
+   . 异常逻辑捕获
+
+. 门限。下载的时候判断大小，小于则用ftp，大于则用gingko
+   ？可能会改变，未来可能变成通过data.yaml制定下载方式
+   ？scp的下载以后有可能需要支持。但是需求不大。产品库的问题
+
+
+. daemon的时候还没写pid文件
+   . 非daemon，希望屏幕输出
+   . daemon, 日志
+   . 非daemon时，有错误就退出
+   . daemon时，有错误抛出，不退出
+
+. 引入一个外部启动脚本，启动的时候判断.pid的可用性
+
+. 引入单元测试
+   . 主要函数需要有单元测试
+
+. --mail-list --gsm-list参数，制定报警接收人
+   . 通过本地的OWNER/WARNING文件去发报警
+   . liuzhuo@baidu.com,15801462951
+
+. --backup=dir
+   . 不指定就删除，指定就备份
+
+. --remove-useless-files
+   . 如果yaml里没有，就把本地删除
+
+. 后置命令，yaml的key：command
+
+
+------------------
+ imbs
+    perl ./deploy_script/downloader.pl -f ./data/yaml
+    判断yaml里面的地址都在我的启动地址的下面，删除就安全了
+
+    先判断一下yaml里面的路径
+  ./data/pl/file1
+  ./bin/pl/file
+
+
+
+
+
+
+

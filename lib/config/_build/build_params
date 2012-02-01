@@ -1,0 +1,301 @@
+do{ my $x = [
+       {
+         'ARGV' => []
+       },
+       {},
+       {
+         'verbose' => undef,
+         'PL_files' => undef,
+         'pollute' => undef,
+         'bindoc_dirs' => [
+                            'blib/script'
+                          ],
+         'conflicts' => {},
+         'recommends' => {},
+         'scripts' => undef,
+         'dist_version' => bless( {
+                                    'original' => '2.68',
+                                    'version' => [
+                                                   2,
+                                                   680
+                                                 ]
+                                  }, 'Module::Build::Version' ),
+         'pod_files' => undef,
+         'config_dir' => '_build',
+         'sign' => undef,
+         'recurse_into' => [],
+         'build_bat' => 0,
+         'extra_linker_flags' => [],
+         'build_class' => 'Test::Run::Builder',
+         'prereq_action_types' => [
+                                    'requires',
+                                    'build_requires',
+                                    'conflicts',
+                                    'recommends'
+                                  ],
+         'base_dir' => '/home/im/hantao/bin/perl/downloader/lib/config',
+         'allow_mb_mismatch' => 0,
+         'xs_files' => undef,
+         'destdir' => undef,
+         'metafile' => 'META.yml',
+         'mb_version' => '0.3',
+         'use_tap_harness' => 0,
+         'test_file_exts' => [
+                               '.t'
+                             ],
+         'dist_name' => 'Config-IniFiles',
+         'has_config_data' => undef,
+         'install_base' => undef,
+         'module_name' => 'Config::IniFiles',
+         'recursive_test_files' => undef,
+         'libdoc_dirs' => [
+                            'blib/lib',
+                            'blib/arch'
+                          ],
+         'perl' => '/usr/bin/perl',
+         'dist_author' => [
+                            'Shlomi Fish <shlomif@iglu.org.il>'
+                          ],
+         'use_rcfile' => 1,
+         'configure_requires' => {
+                                   'Module::Build' => '0.36'
+                                 },
+         'test_files' => undef,
+         'dist_abstract' => undef,
+         'create_readme' => undef,
+         'prefix_relpaths' => {
+                                'core' => {
+                                            'libdoc' => [
+                                                          'man',
+                                                          'man3'
+                                                        ],
+                                            'script' => [
+                                                          'bin'
+                                                        ],
+                                            'libhtml' => [
+                                                           'html'
+                                                         ],
+                                            'bindoc' => [
+                                                          'man',
+                                                          'man1'
+                                                        ],
+                                            'bin' => [
+                                                       'bin'
+                                                     ],
+                                            'arch' => [
+                                                        'lib64',
+                                                        'perl5',
+                                                        '5.8.5',
+                                                        'x86_64-linux-thread-multi'
+                                                      ],
+                                            'binhtml' => [
+                                                           'html'
+                                                         ],
+                                            'lib' => [
+                                                       'lib64',
+                                                       'perl5'
+                                                     ]
+                                          },
+                                'site' => {
+                                            'libdoc' => [
+                                                          'man',
+                                                          'man3'
+                                                        ],
+                                            'script' => [
+                                                          'bin'
+                                                        ],
+                                            'libhtml' => [
+                                                           'html'
+                                                         ],
+                                            'bindoc' => [
+                                                          'man',
+                                                          'man1'
+                                                        ],
+                                            'bin' => [
+                                                       'bin'
+                                                     ],
+                                            'arch' => [
+                                                        'lib64',
+                                                        'perl5',
+                                                        'site_perl',
+                                                        '5.8.5',
+                                                        'x86_64-linux-thread-multi'
+                                                      ],
+                                            'binhtml' => [
+                                                           'html'
+                                                         ],
+                                            'lib' => [
+                                                       'lib64',
+                                                       'perl5',
+                                                       'site_perl'
+                                                     ]
+                                          },
+                                'vendor' => {
+                                              'libdoc' => [
+                                                            'man',
+                                                            'man3'
+                                                          ],
+                                              'script' => [
+                                                            'bin'
+                                                          ],
+                                              'libhtml' => [
+                                                             'html'
+                                                           ],
+                                              'bindoc' => [
+                                                            'man',
+                                                            'man1'
+                                                          ],
+                                              'bin' => [
+                                                         'bin'
+                                                       ],
+                                              'arch' => [
+                                                          'lib64',
+                                                          'perl5',
+                                                          '5.8.5',
+                                                          'x86_64-linux-thread-multi'
+                                                        ],
+                                              'binhtml' => [
+                                                             'html'
+                                                           ],
+                                              'lib' => [
+                                                         'lib64',
+                                                         'perl5'
+                                                       ]
+                                            }
+                              },
+         'meta_merge' => {
+                           'keywords' => [
+                                           'ini',
+                                           'files',
+                                           'config',
+                                           'configuration',
+                                           'ini files',
+                                           'windows',
+                                           'tie',
+                                           'pure-perl',
+                                           'tested'
+                                         ],
+                           'resources' => {
+                                            'homepage' => 'https://sourceforge.net/projects/config-inifiles/',
+                                            'repository' => 'http://config-inifiles.svn.sourceforge.net/svnroot/config-inifiles/'
+                                          }
+                         },
+         'get_options' => {},
+         'dist_version_from' => 'lib/Config/IniFiles.pm',
+         'debugger' => undef,
+         'html_css' => '',
+         'build_elements' => [
+                               'PL',
+                               'support',
+                               'pm',
+                               'xs',
+                               'pod',
+                               'script'
+                             ],
+         'orig_dir' => '/home/im/hantao/bin/perl/downloader/lib/config',
+         'include_dirs' => [],
+         'installdirs' => 'site',
+         'create_makefile_pl' => 'small',
+         'magic_number' => undef,
+         'install_sets' => {
+                             'core' => {
+                                         'libdoc' => '/usr/share/man/man3',
+                                         'script' => '/usr/bin',
+                                         'libhtml' => undef,
+                                         'bindoc' => '/usr/share/man/man1',
+                                         'bin' => '/usr/bin',
+                                         'arch' => '/usr/lib64/perl5/5.8.5/x86_64-linux-thread-multi',
+                                         'binhtml' => undef,
+                                         'lib' => '/usr/lib/perl5/5.8.5'
+                                       },
+                             'site' => {
+                                         'libdoc' => '/usr/share/man/man3',
+                                         'script' => '/usr/bin',
+                                         'libhtml' => undef,
+                                         'bindoc' => '/usr/share/man/man1',
+                                         'bin' => '/usr/bin',
+                                         'arch' => '/usr/lib64/perl5/site_perl/5.8.5/x86_64-linux-thread-multi',
+                                         'binhtml' => undef,
+                                         'lib' => '/usr/lib/perl5/site_perl/5.8.5'
+                                       },
+                             'vendor' => {
+                                           'libdoc' => '/usr/share/man/man3',
+                                           'script' => '/usr/bin',
+                                           'libhtml' => undef,
+                                           'bindoc' => '/usr/share/man/man1',
+                                           'bin' => '/usr/bin',
+                                           'arch' => '/usr/lib64/perl5/vendor_perl/5.8.5/x86_64-linux-thread-multi',
+                                           'binhtml' => undef,
+                                           'lib' => '/usr/lib/perl5/vendor_perl/5.8.5'
+                                         }
+                           },
+         'tap_harness_args' => {},
+         'install_base_relpaths' => {
+                                      'libdoc' => [
+                                                    'man',
+                                                    'man3'
+                                                  ],
+                                      'script' => [
+                                                    'bin'
+                                                  ],
+                                      'libhtml' => [
+                                                     'html'
+                                                   ],
+                                      'bindoc' => [
+                                                    'man',
+                                                    'man1'
+                                                  ],
+                                      'bin' => [
+                                                 'bin'
+                                               ],
+                                      'arch' => [
+                                                  'lib',
+                                                  'perl5',
+                                                  'x86_64-linux-thread-multi'
+                                                ],
+                                      'binhtml' => [
+                                                     'html'
+                                                   ],
+                                      'lib' => [
+                                                 'lib',
+                                                 'perl5'
+                                               ]
+                                    },
+         'meta_add' => {},
+         'create_packlist' => 1,
+         'requires' => {
+                         'warnings' => 0,
+                         'strict' => 0,
+                         'Symbol' => 0,
+                         'Carp' => 0
+                       },
+         'install_path' => {},
+         'pm_files' => undef,
+         'quiet' => undef,
+         'script_files' => undef,
+         'extra_compiler_flags' => [],
+         'build_script' => 'Build',
+         'original_prefix' => {
+                                'core' => '/usr',
+                                'site' => '/usr',
+                                'vendor' => '/usr'
+                              },
+         'c_source' => undef,
+         'autosplit' => undef,
+         'license' => 'perl',
+         'program_name' => undef,
+         'build_requires' => {
+                               'warnings' => 0,
+                               'Test::More' => 0,
+                               'strict' => 0,
+                               'Scalar::Util' => 0,
+                               'List::Util' => 0,
+                               'base' => 0,
+                               'File::Spec' => 0
+                             },
+         'config' => undef,
+         'blib' => 'blib',
+         'prefix' => undef
+       }
+     ];
+$x; }
