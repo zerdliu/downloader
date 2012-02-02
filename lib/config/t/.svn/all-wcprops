@@ -1,0 +1,293 @@
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t
+END
+04import.t
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/04import.t
+END
+00load.t
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/00load.t
+END
+non-contiguous-groups.ini
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/non-contiguous-groups.ini
+END
+pod.t
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/pod.t
+END
+06oo.t
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/06oo.t
+END
+27empty-ini.t
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/27empty-ini.t
+END
+23scalar-ref.t
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/23scalar-ref.t
+END
+03comments.t
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/03comments.t
+END
+05hash.t
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/05hash.t
+END
+test.ini
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/test.ini
+END
+20allowedcommentchars.t
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/20allowedcommentchars.t
+END
+19param-found-outside-section.t
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/19param-found-outside-section.t
+END
+ca.ini
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/ca.ini
+END
+cmt.ini
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/cmt.ini
+END
+17untainted-multiline-values.t
+K 25
+svn:wc:ra_dav:version-url
+V 128
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/17untainted-multiline-values.t
+END
+14brackets-within-values.t
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/14brackets-within-values.t
+END
+08group.t
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/08group.t
+END
+26scalar-filehandle.t
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/26scalar-filehandle.t
+END
+30parameters-with-empty-values.t
+K 25
+svn:wc:ra_dav:version-url
+V 130
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/30parameters-with-empty-values.t
+END
+29end-of-line-comment.t
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/29end-of-line-comment.t
+END
+trailing-comments.ini
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/trailing-comments.ini
+END
+end-of-line-comment.ini
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/end-of-line-comment.ini
+END
+16case-sensitive-default.t
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/16case-sensitive-default.t
+END
+pod-coverage.t
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/pod-coverage.t
+END
+18non-contiguous-groups.t
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/18non-contiguous-groups.t
+END
+12open-empty-file.t
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/12open-empty-file.t
+END
+en.ini
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/en.ini
+END
+case-sensitive-default.ini
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/case-sensitive-default.ini
+END
+01basic.t
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/01basic.t
+END
+25line-endings.t
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/25line-endings.t
+END
+es.ini
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/es.ini
+END
+09case.t
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/09case.t
+END
+for-27-empty.ini
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/for-27-empty.ini
+END
+22trailing-comment-lines.t
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/22trailing-comment-lines.t
+END
+13val-in-list-context.t
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/13val-in-list-context.t
+END
+array.ini
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/array.ini
+END
+10delta.t
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/10delta.t
+END
+15store-and-retrieve-here-doc-terminator.t
+K 25
+svn:wc:ra_dav:version-url
+V 140
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/15store-and-retrieve-here-doc-terminator.t
+END
+case-sensitive.ini
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/case-sensitive.ini
+END
+allowed-comment-chars.ini
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/allowed-comment-chars.ini
+END
+07misc.t
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/07misc.t
+END
+bad.ini
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/bad.ini
+END
+blank.ini
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/blank.ini
+END
+24case-sensitive-exists.t
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/24case-sensitive-exists.t
+END
+11copy-ties-with-array-vals.t
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/11copy-ties-with-array-vals.t
+END
+28nomultiline.t
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/28nomultiline.t
+END
+brackets-in-values.ini
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/brackets-in-values.ini
+END
+02weird.t
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/t/02weird.t
+END

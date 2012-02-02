@@ -7,10 +7,9 @@ $VERSION = '0.1.0' ;
 
 use Exporter;
 our @ISA = qw{ Exporter } ; 
-our @EXPORT = qw{ ParseDesFile UpdateFileOrDir GetValueFromUpdateList RemoveUselessFiles GetAllLocalFiles ParseDynamicFile GetFileWithRetry TransScpUrlToFtpUrl GetFtpUrlFileType GetFile CheckMd5 GetRemoteFileSize } ; 
+our @EXPORT = qw{ ParseDesFile UpdateFileOrDir GetValueFromUpdateList ParseDynamicFile GetFileWithRetry TransScpUrlToFtpUrl GetFtpUrlFileType GetFile CheckMd5 GetRemoteFileSize } ; 
 our @EXPORT_OK = qw{ };
 
-use YAML ;
 use Data::Dumper ; 
 use File::Basename ; 
 use File::stat ;
@@ -18,9 +17,6 @@ use File::Compare ;
 use File::Copy;
 use Net::FTP ;
 use IO::File ; 
-
-our $download_rate = 10 ; 
-
 
 ## TODO: not support
 sub ParseDesFile {
@@ -45,18 +41,6 @@ sub GetValueFromUpdateList {
     } 
     return scalar undef ; 
 }
-
-## rm fils not in data.yaml
-## dist file , yaml not , delete disk file
-sub RemoveUselessFiles {
-   #GetAllLocalFiles
-   return 1 ; 
-}
-
-sub GetAllLocalFiles {
-   return 1 ; 
-}
-
 
 ## parse link to file  :  file -> file.4  ; input scp_url , output scp_url
 sub ParseDynamicFile {

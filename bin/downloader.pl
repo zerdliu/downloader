@@ -9,7 +9,7 @@ BEGIN{
 }     
 use strict ; 
 use warnings ; 
-use YAML ;
+use YAML::Syck ;
 use Data::Dumper ; 
 use File::Basename ; 
 use File::stat ;
@@ -66,7 +66,6 @@ my $cmd_config = GetOptions(
 ) ;
 
 $threshold = $threshold * 1024 * 1024 ; 
-#print "Type: $data_type\n" ; 
 
 my $yaml ; 
 our $queue ; 
@@ -87,7 +86,6 @@ do {
     my $update_list = GetUpdateFileList($yaml, $data_type) ; 
     ## Ìî³ä¶ÓÁÐ
     my @sorted_update_list = sort { $a->{"file_size"} <=> $b->{"file_size"} } @{$update_list} ; 
-    #my @sorted_update_list = ( "liuzhuo", "other" ) ; 
     #print Dumper \@sorted_update_list ; 
     foreach my $aData ( @sorted_update_list ) {
         #print Dumper $aData ; 

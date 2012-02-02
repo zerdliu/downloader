@@ -23,10 +23,11 @@
 
 . 引入一个外部启动脚本，启动的时候判断.pid的可用性
 
-. 引入单元测试
-   . 主要函数需要有单元测试
+X 引入单元测试
+   X 主要函数需要有单元测试
 
-. --mail-list --gsm-list参数，制定报警接收人
+暂时不实现，通过logcheck吧
+X --mail-list --gsm-list参数，制定报警接收人
    . 通过本地的OWNER/WARNING文件去发报警
    . liuzhuo@baidu.com,15801462951
 

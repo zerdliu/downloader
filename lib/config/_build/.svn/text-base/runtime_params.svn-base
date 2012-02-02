@@ -1,0 +1,6 @@
+do{ my $x = {
+       'config' => {
+                     'prefix' => '../config_infiles'
+                   }
+     };
+$x; }

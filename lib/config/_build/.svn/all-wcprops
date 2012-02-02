@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build
+END
+magicnum
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/magicnum
+END
+prereqs
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/prereqs
+END
+build_params
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/build_params
+END
+auto_features
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/auto_features
+END
+runtime_params
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/runtime_params
+END
+cleanup
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/cleanup
+END
+notes
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/notes
+END
+config_data
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/config_data
+END
+features
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/op/ecomop/!svn/ver/1296/trunk/comseop/im/script/production/deploy_script/downloader/lib/config/_build/features
+END
