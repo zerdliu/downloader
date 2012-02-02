@@ -7,7 +7,7 @@ $VERSION = '0.1.0' ;
 
 use Exporter;
 our @ISA = qw{ Exporter } ; 
-our @EXPORT = qw{ ParseDesFile UpdateFileOrDir GetValueFromUpdateList RemoveUselessFiles GetAllLocalFiles GetUpdateFileList ParseDynamicFile GetFileWithRetry TransScpUrlToFtpUrl GetFtpUrlFileType GetFile CheckMd5 GetRemoteFileSize } ; 
+our @EXPORT = qw{ ParseDesFile UpdateFileOrDir GetValueFromUpdateList RemoveUselessFiles GetAllLocalFiles ParseDynamicFile GetFileWithRetry TransScpUrlToFtpUrl GetFtpUrlFileType GetFile CheckMd5 GetRemoteFileSize } ; 
 our @EXPORT_OK = qw{ };
 
 use YAML ;
@@ -31,7 +31,6 @@ sub UpdateFileOrDir {
     my ($source, $dest) = @_ ; 
 
     if ( -d $dest ) {
-        print "dir : \n" ; 
         return !system("mv $dest $dest.bak && mv $source $dest && rm -rf $dest.bak") ; 
     } else {
         return !system("mv $source $dest") ; 
@@ -58,61 +57,6 @@ sub GetAllLocalFiles {
    return 1 ; 
 }
 
-## got a ref and return a ref of hash , label -> file_size
-sub GetUpdateFileList {
-   my ($yaml, $data_type) = @_ ; 
-   my @result ; 
-   $data_type = $data_type || "static|dynamic" ;
-   my $data_type_re = qr/$data_type/ ;    
-   #print Dumper \$data_type ; 
-   #print Dumper \$data_type_re ; 
-   for my $label (keys %{$yaml}) {
-
-      my $a_data_ref = $$yaml{"$label"} ; 
-      # print Dumper $a_data_ref ; 
-
-      my $type = $$a_data_ref{"type"} ; 
-
-      ## 如果类型不符合，则跳过。即仅下载static或者dynamic
-      next if ( $type !~ $data_type_re ) ;
-
-      my $source = $$a_data_ref{"source"} ; 
-      my $deploy_path = $$a_data_ref{"deploy_path"} ; 
-      my $source_md5 ; 
-
-      print "before parse $source\n" ; 
-      $source = ParseDynamicFile($source) ; 
-      $source =~ s/\/$// ; 
-      $deploy_path =~ s/\/$// ; 
-      print "after parse $source\n" ; 
-      $source_md5 = $source.".md5" ; 
-      
-      if ( $source and $source =~ /\s*/ ) {
-      } else {
-          WriteLog("source is null") ; 
-          next ; 
-      } 
-       
-      my $local_md5 = $deploy_path.".md5" ; 
-      my $local_md5_tmp = $local_md5.".tmp" ; 
-
-      my $local_dir = dirname($deploy_path) ; 
-      system("mkdir -p $local_dir") ; 
-      ## download md5
-      GetFileWithRetry($source_md5, $local_md5_tmp,"$download_rate","ftp") ; 
-      #print "past:$local_md5 ; now:$local_md5_tmp\n" ; 
-      if (compare("$local_md5" , "$local_md5_tmp") != 0 ) {
-         my $file_size = GetRemoteFileSize($source) ; 
-         ## put it in data set
-         $$a_data_ref{"file_size"} = $file_size ;
-         $$a_data_ref{"source"} = $source ;  
-         $$a_data_ref{"deploy_path"} = $deploy_path ;  
-         push (@result, $a_data_ref) ; 
-      }
-   }
-   #print Dumper \@result ; 
-   return \@result ; 
-}
 
 ## parse link to file  :  file -> file.4  ; input scp_url , output scp_url
 sub ParseDynamicFile {
@@ -126,49 +70,58 @@ sub ParseDynamicFile {
 
    my $try = 0 ;
    while ( $try < 5 ) {
-   eval {
-      $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot login", $ftp->message ;
-      $ftp->login("anonymous",'-anonymous@') or die "Cannot login", $ftp->message ;
-      $ftp->binary() or die "Cannot binary", $ftp->message ;
-
-      my @files = $ftp->dir("$path") or die "Cannot dir", $ftp->message ;
-   
-   #print Dumper \@files ;
-   ## todo : wrong if @files more than 1 element
-      foreach my $file (@files) {
-          if ( $file =~ /^l.*->\s*(.*)\s*$/ ) {
-           #print "$1\n" ; 
-              $result = "$server:$1" ; 
-           #WriteLog("##$scp_url ----- $1")  ; 
-           #print "$result\n" ; 
-          } else {
-             $result = $scp_url ; 
+       eval {
+          $ftp = FtpConnect("$server") ; 
+    
+          my @files = $ftp->dir("$path") or die "No such file $path ", $ftp->message ;
+       
+          foreach my $file (@files) {
+              if ( $file =~ /^l.*->\s*(.*)\s*$/ ) {
+                  $result = "$server:$1" ; 
+              } else {
+                  $result = $scp_url ; 
+              }
           }
-      }
-      $ftp->quit;
-   } ; 
-   $@ ? print $@ && return undef : return $result ;  
-   sleep(4) ;
-   $try ++ ;  
+          $ftp->quit;
+       } ; 
+       return $result unless $@ ; 
+       if ( $@ =~ /No such file/) {
+           WriteLog("FATAL: $@") ; 
+           print $@ ; 
+           return undef ; 
+       } else {
+           WriteLog("WARNING: $@") ; 
+           print $@ ; 
+       } 
+       sleep(4) ;
+       $try ++ ;  
    }
    return $result ;  
 }
 
 ## get file , many times 
 sub GetFileWithRetry {
-   my ($source, $local_path, $limit, $protocal, $retry) = @_ ; 
+   my ($source, $local_path, $limit, $protocal, $retry, $args) = @_ ; 
    my $return = 0 ; 
 
+   $args= "" if (!$args) ; 
    $limit = "10" if (!$limit) ; 
    $protocal = "gingko" if (!$protocal) ; 
    $retry = 2 if (!$retry) ; 
 
-
    while ( $retry ) {
-      if ( GetFile($source, $local_path, $limit, $protocal) ) {
-          $return = 1 ; 
-          last ; 
-      }    
+      eval {
+          if ( GetFile($source, $local_path, $limit, $protocal, $args) ) {
+              $return = 1 ; 
+              last ; 
+          } else {
+              die "Get $source Fail. $@" ; 
+          }	  
+      }; 
+      if ( $@ ) {
+          WriteLog("Warning: $@") ; 
+          print $@ ; 
+      }
       $retry -- ; 
       sleep(10) ; 
    }
@@ -197,48 +150,55 @@ sub GetFtpUrlFileType {
     #print "$server | $path\n" ; 
 
     my $try = 0 ;
-    while ( $try < 15 ) {
-    eval {
-      $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot login", $ftp->message ;
-      $ftp->login("anonymous",'-anonymous@') or die "Cannot login", $ftp->message ;
-      $ftp->binary() or die "Cannot binary", $ftp->message ;
-
-       my @files = $ftp->dir($path) ;
-    #print Dumper \@files ;
-    ## todo : wrong if @files more than 1 element
-       $result = "f" if @files == 1 ; 
-       $result = "d" if @files > 1 ; 
-
-       $ftp->quit;
-    } ; 
-       $@ ? print $@ : return $result ;
+    while ( $try < 5 ) {
+        eval {
+           $ftp = FtpConnect("$server") ; 
+           my @files = $ftp->dir($path) ;
+           die "No such file: $path" unless (@files) ;
+           ## todo : wrong if @files more than 1 element
+           $result = "f" if @files == 1 ; 
+           $result = "d" if @files > 1 ; 
+    
+           $ftp->quit;
+        } ; 
+       return $result unless $@ ; 
+       if ( $@ =~ /No such file/) {
+           WriteLog("FATAL: $@") ; 
+	   print $@ ; 
+           return undef ; 
+       } else {
+           WriteLog("WARNING: $@") ; 
+	   print $@ ; 
+       } 
        sleep(4) ;
        $try ++ ;
-    }
+    } 
     return $result ;   
- 
 }
 
 
 ## get file [gingko, ftp]
 sub GetFile {
-   my ($source, $deploy_path,$limit, $protocal) = @_ ;
+   my ($source, $deploy_path,$limit, $protocal, $args) = @_ ;
    my $cmd ; 
    $limit = $limit || 10 ; 
 
    if ( $protocal eq "ftp") { 
        $limit = $limit."M" ; 
        my $ftp_url = TransScpUrlToFtpUrl($source) ; 
+       my $local_dir = dirname($deploy_path) ; 
+       system("mkdir -p $local_dir") ; 
        if ( GetFtpUrlFileType($ftp_url) eq 'd' ) {
-           $cmd = "wget -q -r $ftp_url --limit-rate=$limit -P $deploy_path -nH -nd" ;
+           $cmd = "wget -q -r $ftp_url --limit-rate=$limit -P $deploy_path -nH -nd $args" ;
        } elsif ( GetFtpUrlFileType($ftp_url) eq 'f' ) {
-           $cmd = "wget --limit-rate=$limit -q $ftp_url -O $deploy_path" ;
+           $cmd = "wget --limit-rate=$limit -q $ftp_url -O $deploy_path $args" ;
+       } else {
+           return undef; 
        }
-       #print "$cmd\n" ; 
        return !system($cmd) ;
    }
    elsif ( $protocal eq "gingko" ) {
-       $cmd = "gkocp -u 10 -d $limit -l ./gingko.log $source $deploy_path" ;
+       $cmd = "gkocp -u 10 -d $limit -l ./gingko.log $source $deploy_path $args" ;
        return !system($cmd) ;
    }
    else {
@@ -273,14 +233,10 @@ sub GetRemoteFileSize {
    my $server = $scp_url[0] ; 
    my $path = $scp_url[1] ; 
 
-   WriteLog("write log ok.") ; 
    my $try = 0 ;
    while ( $try < 5 ) {
        eval {
-          $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot login:", $ftp->message ;
-          $ftp->login("anonymous",'-anonymous@') or die "Cannot login:", $ftp->message ;
-          $ftp->binary() or die "Cannot binary:", $ftp->message ;
-    
+	  $ftp = FtpConnect("$server") ;  
           my @files = $ftp->ls("$path") ;
           die "No such file: $scp_url" unless (@files) ;
           foreach my $file (@files) {
@@ -292,9 +248,11 @@ sub GetRemoteFileSize {
        return $size unless $@ ; 
        if ( $@ =~ /No such file/) {
            WriteLog("FATAL: $@") ; 
-           $size = undef ; 
+	   print $@ ; 
+           return undef ; 
        } else {
-           WriteLog("WARNING: Cannot Connect $server. $@") ; 
+           WriteLog("WARNING: $@") ; 
+	   print $@ ; 
            $size = undef ; 
        } 
        sleep(4) ;
@@ -303,11 +261,20 @@ sub GetRemoteFileSize {
    return $size ; 
 }
 
+sub FtpConnect {
+   my ($server) = @_ ; 
+   my $ftp ; 
+   $ftp = Net::FTP->new("$server", Debug => 0, Timeout => 500 ) or die "Cannot connect to $server: $@" ;
+   $ftp->login("anonymous",'-anonymous@') or die "Cannot login:", $ftp->message ;
+   $ftp->binary() or die "Cannot binary:", $ftp->message ;
+   return $ftp ; 
+}
+
 sub WriteLog {
     my ($msg) = @_ ; 
     chomp $msg ;  
     my $log_fh = IO::File->new ; 
-    $log_fh->open("./downloader.log",">>") ; 
+    $log_fh->open("../downloader.log",">>") ; 
     $log_fh->print(GetLogDate() . " " . $msg . "\n") ; 
     $log_fh->close ; 
 }
