@@ -1,0 +1,153 @@
+#!/bin/bash
+# write by liuzhuo[zerd liu] at 2009-03-05
+# liuzhuo@baidu.com [ecom-op->cpro,im,auction-op]
+# 模块控制脚本模板
+# modified by lihao 20090812 hp-op
+
+version="0.0.9"
+build_time="2009-03-05"
+
+############################
+## standandard tools path ##
+############################
+home_dir="/home/${USER}"
+supervise_dir="${home_dir}/opbin/supervise"
+lock_dir="${supervise_dir}/lock"
+status_dir="${supervise_dir}/status"
+[ ! -d ${lock_dir} ] && mkdir -p ${lock_dir}
+[ ! -d ${status_dir} ] && mkdir -p ${status_dir}
+
+#############################################
+## extract information form control script ##
+#############################################
+script_path=$(dirname $0)
+script_name=$(basename $0)
+program_name=$(echo ${script_name} | sed 's/\([[:alnum:]]\+\)_control$/\1/')
+pid_file=${lock_dir}/${script_name}.lck
+warning_script="${home_dir}/${program_name}/bin/warning_${program_name}.sh"
+
+##########################
+## predefined functions ##
+##########################
+function print_version() {
+
+cat <<-print_version
+	${script_name} ${version}
+	Copyright Baidu Inc.
+print_version
+}
+
+function usage() {
+
+cat <<-usage
+	Usage: ${script_name} start|stop|restart|reload|cleanup|version|help|check
+usage
+}
+
+check_process() {
+	ps wx | grep -w "./bin/${program_name}" | grep -v "grep" | grep -w "supervise" >/dev/null
+}
+
+write_pid2file() {
+	echo $(ps wx | grep -v grep | grep -w "./bin/${program_name}" | grep -w "supervise" | awk '{print $1}') > ${pid_file}
+	echo $1
+}
+
+#####################
+## process command ##
+#####################
+## step 1 , get parameter number
+[ $# -ne 1 ] && echo "Wrong args number. [$# != 1]" && exit 1
+command_input=$1
+
+## 根据不同的参数选择不同的接口行为
+case X"${command_input}" in
+    Xstart)
+	## 进入程序启动目录，此处不一定为bin目录，一般为实例目录
+    ## 此处为暂时按照如下写法，未来会将downloader放置在公共目录下，则不会再有此种写法
+	cd ../../../ &&
+	{	
+		##检查进程中是否存在相关服务的supervise进程，有则退出并检查pid文件内容是否正确；没有则启动服务。
+		check_process
+		if [ $? -eq 0 ];then
+			echo "${program_name} is running. exit!"
+			if [ -f ${pid_file} ];then
+				old_pgrp=$(cat ${pid_file})
+				if [ ! -z ${old_pgrp} ];then	##pid文件不为空
+					ps wx | grep -w "./bin/${program_name}" | grep -v grep | awk '{print $1}' | grep -w "${old_pgrp}" >/dev/null
+					if [ $? -eq 0 ];then
+						exit 1	##pid文件中的pid是正确的
+					else
+						write_pid2file "pid in pid file wrong , write the correct pid into."
+						exit 1
+					fi
+				else
+					write_pid2file "pid file empty , write the correct pid into."
+					exit 1
+				fi
+			fi
+			write_pid2file "pid file not exist , create & write."
+			exit 1
+		else
+			echo "${program_name} is not running."
+		fi
+			
+        echo "${program_name} ${command_input}." 
+	    ## 需要执行的命令,包括检查命令，将进程组ID写入pid文件，便于停止的时候杀掉进程组
+        { 
+			ulimit -c unlimited
+			${supervise_dir}/bin/supervise -p ${status_dir}/${program_name} -f "nohup perl ./deploy_script/downloader/bin/${program_name} --yaml-file=./data/data.yaml --threshold=20 --daemon --download-rate=20 --data-type=dynamic --interval=1200" -r ${warning_script} -t 60 &>/dev/null & 
+			echo $! > ${pid_file} 
+		}
+    }
+        ;;
+    Xstop)
+        echo "${program_name} ${command_input}." 
+        ## 需要执行的命令,包括检查命令
+        { 
+	    old_pgrp=$(cat ${pid_file})
+            child_pid=`ps awx -o "%p %P" | grep -w ${old_pgrp} | awk '{print $1}' | grep -v ${old_pgrp}`
+            kill -9 ${old_pgrp}
+            kill -9 ${child_pid}
+            exit 0
+	}
+        ;;
+    Xrestart)
+        echo "${program_name} ${command_input}." 
+        ## 需要执行的命令,包括检查命令
+        { : ;  }
+        ;;
+    Xreload)
+        echo "${program_name} ${command_input}." 
+        ## 需要执行的命令,包括检查命令
+        { : ; }
+        ;;
+    Xcleanup)
+        echo "${program_name} ${command_input}." 
+        ## 需要执行的命令,包括检查命令
+        { 
+	    old_pgrp=$(cat ${pid_file})
+            child_pid=`ps awx -o "%p %P" | grep -w ${old_pgrp} | awk '{print $1}' | grep -v ${old_pgrp}`
+            kill -9 ${old_pgrp}
+            kill -9 ${child_pid}
+            exit 0
+	    }
+        ;;
+    Xcheck)
+        echo "${program_name} ${command_input}." 
+        ## 需要执行的命令,包括检查命令
+        { : ; }
+        ;;
+    Xhelp)
+        usage
+        ;;
+    Xversion)
+        print_version
+        ;;
+    *)
+        echo "Unsupport command [${command_input}]."
+        exit 1
+        ;; 
+esac
+
+exit 0

@@ -1,25 +1,26 @@
 
 
-. --test=1,2参数
-   . 1：yaml格式检查。label重合需要检查出来
+X --test=1,2参数
+   X 1：yaml格式检查。label重合需要检查出来
    . 2：yaml文件中的地址是否可下载
    . 是否可用TEST::MORE实现
 
 . 超时的报警，参数可选
 
-. 异常判断
+X 异常判断
    . 异常逻辑捕获
+   . 日志
 
-. 门限。下载的时候判断大小，小于则用ftp，大于则用gingko
+X 门限。下载的时候判断大小，小于则用ftp，大于则用gingko
    ？可能会改变，未来可能变成通过data.yaml制定下载方式
    ？scp的下载以后有可能需要支持。但是需求不大。产品库的问题
 
 
-. daemon的时候还没写pid文件
-   . 非daemon，希望屏幕输出
-   . daemon, 日志
-   . 非daemon时，有错误就退出
-   . daemon时，有错误抛出，不退出
+X daemon的时候还没写pid文件
+   X 非daemon，希望屏幕输出
+   X daemon, 日志
+   X 非daemon时，有错误就退出
+   X daemon时，有错误抛出，不退出
 
 . 引入一个外部启动脚本，启动的时候判断.pid的可用性
 
@@ -31,13 +32,13 @@ X --mail-list --gsm-list参数，制定报警接收人
    . 通过本地的OWNER/WARNING文件去发报警
    . liuzhuo@baidu.com,15801462951
 
-. --backup=dir
+X --backup=dir
    . 不指定就删除，指定就备份
 
-. --remove-useless-files
+X --remove-useless-files
    . 如果yaml里没有，就把本地删除
 
-. 后置命令，yaml的key：command
+X 后置命令，yaml的key：command
 
 
 ------------------
@@ -51,7 +52,20 @@ X --mail-list --gsm-list参数，制定报警接收人
 
 
 
+X.输入参数合法性检查
+X.返回值规范性
+X 3.$$a_data_ref{"file_size"} = $file_size ;
+  $$a_data_ref{"source"} = $source ;  [好像多余]
+  $$a_data_ref{"deploy_path"} = $deploy_path ;[好像多余]
+X 4.gkocp seed时间可配
+X 5.md5.tmp文件清除
+X 6.支持词表的删除
+X 7.UpdateFile函数中存在bug，如下，不能对method直接赋值。
+   if ( $file_size < $threshold )  {
+	$method = "ftp" ;
+  }
+X  在method的选择上还有问题
 
 
-
+X 如果是非daemon调用，遇到失败则退出 
 

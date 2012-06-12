@@ -7,7 +7,7 @@ $VERSION = '0.1.0' ;
 
 use Exporter;
 our @ISA = qw{ Exporter } ; 
-our @EXPORT = qw{ ParseDesFile UpdateFileOrDir GetValueFromUpdateList ParseDynamicFile GetFileWithRetry TransScpUrlToFtpUrl GetFtpUrlFileType GetFile CheckMd5 GetRemoteFileSize } ; 
+our @EXPORT = qw{ UpdateFileOrDir GetValueFromUpdateList ParseDynamicFile GetFileWithRetry CheckMd5 GetRemoteFileSize WriteLog CreatPidFile } ; 
 our @EXPORT_OK = qw{ };
 
 use Data::Dumper ; 
@@ -17,20 +17,62 @@ use File::Compare ;
 use File::Copy;
 use Net::FTP ;
 use IO::File ; 
+use Digest::MD5 ;
 
-## TODO: not support
-sub ParseDesFile {
-    return 1 ; 
-}
+sub CreatPidFile {                                                   
+    my ($pid_file) = @_ ;                                            
+                                                                         
+    if ( -e $pid_file ) {                                        
+                                                                         
+        my $fh = IO::File->new($pid_file) || return ;                
+        my $pid = <$fh> ;                                            
+        $fh->close ;                                                 
+                                                                         
+        if ( kill 0 => $pid ) {                                      
+            return 0 ;                                               
+        }                                                        
+        else {                                                   
+            unlink $pid_file || return ;                         
+        }                                                            
+    }                                                                
+                                                                         
+    my $fh = IO::File->new($pid_file, O_WRONLY|O_CREAT|O_EXCL,0644) || return ;
+    $fh->print("$$") ;                                               
+    $fh->close ; 
+    return 1 ;  
+}   
 
 sub UpdateFileOrDir {
-    my ($source, $dest) = @_ ; 
+    my ($source, $dest, $version_control) = @_ ;
 
-    if ( -d $dest ) {
-        return !system("mv $dest $dest.bak && mv $source $dest && rm -rf $dest.bak") ; 
+    if ( $version_control eq "yes" ) {
+        my $version = get_link_version($dest)  ;
+        return !system("rm -rf $dest.$version && mv $source $dest.$version && rm -rf $dest && ln -s $dest.$version $dest && cp $dest.md5.tmp $dest.$version.md5") ;
     } else {
-        return !system("mv $source $dest") ; 
+            
+        if ( -d $dest ) {
+            return !system("mv $dest $dest.bak && mv $source $dest && rm -rf $dest.bak") ;
+        } else {
+            return !system("mv $source $dest") ;
+        }
+        
     }
+ 
+}
+
+sub get_link_version {
+    my ( $link_path ) = @_ ;
+    my $version ;
+    my $dest ; 
+    if ( -l $link_path ) {
+        my $dest = readlink $link_path ;
+        $dest =~ m{.*\.(\d+)$} ;
+        $version = $1 + 1;
+    } else {
+        $version = 1 ;
+    }
+  
+    return $version ;
 }
 
 sub GetValueFromUpdateList {
@@ -53,12 +95,16 @@ sub ParseDynamicFile {
    my $path = $scp_url[1] ;
 
    my $try = 0 ;
+   my @files ; 
    while ( $try < 5 ) {
        eval {
+
           $ftp = FtpConnect("$server") ; 
-    
-          my @files = $ftp->dir("$path") or die "No such file $path ", $ftp->message ;
-       
+          @files = $ftp->dir("$path") or die "No such file $path ", $ftp->message ;   
+          $ftp->quit;
+ 
+          @files = `lftp $server -e "set net:timeout 1;set net:max-retries 20;set net:reconnect-interval-base 5;set net:reconnect-interval-multiplier 1 ; ls -d $path ; quit"`; 
+          die "No such file or dir. $server:$path\n" if not defined @files ; 
           foreach my $file (@files) {
               if ( $file =~ /^l.*->\s*(.*)\s*$/ ) {
                   $result = "$server:$1" ; 
@@ -66,7 +112,6 @@ sub ParseDynamicFile {
                   $result = $scp_url ; 
               }
           }
-          $ftp->quit;
        } ; 
        return $result unless $@ ; 
        if ( $@ =~ /No such file/) {
@@ -85,17 +130,18 @@ sub ParseDynamicFile {
 
 ## get file , many times 
 sub GetFileWithRetry {
-   my ($source, $local_path, $limit, $protocal, $retry, $args) = @_ ; 
+   my ($source, $local_path, $limit, $protocal, $retry, $wget_args, $gingko_args, $file_type) = @_ ; 
    my $return = 0 ; 
 
-   $args= "" if (!$args) ; 
+   $wget_args= "" if (!$wget_args) ; 
+   $gingko_args= "" if (!$gingko_args) ; 
    $limit = "10" if (!$limit) ; 
    $protocal = "gingko" if (!$protocal) ; 
    $retry = 2 if (!$retry) ; 
 
    while ( $retry ) {
       eval {
-          if ( GetFile($source, $local_path, $limit, $protocal, $args) ) {
+          if ( GetFile($source, $local_path, $limit, $protocal, $wget_args, $gingko_args, $file_type) ) {
               $return = 1 ; 
               last ; 
           } else {
@@ -123,7 +169,7 @@ sub TransScpUrlToFtpUrl {
 }
 
 ## input  : ftp url 
-## output : f or d
+## output : file or dir
 sub GetFtpUrlFileType {
     my ($ftp_url) = @_ ; 
     my $ftp ; 
@@ -136,26 +182,24 @@ sub GetFtpUrlFileType {
     my $try = 0 ;
     while ( $try < 5 ) {
         eval {
-           $ftp = FtpConnect("$server") ; 
-           my @files = $ftp->dir($path) ;
-           die "No such file: $path" unless (@files) ;
+           my $long_output = `lftp $server -e "set net:timeout 1;set net:max-retries 20;set net:reconnect-interval-base 5;set net:reconnect-interval-multiplier 1 ; ls -d $path ; quit"`; 
+           die "No such file $ftp_url" unless $long_output ; 
+           chomp $long_output ; 
+           $long_output =~ m{^(.)} ; 
            ## todo : wrong if @files more than 1 element
-           $result = "f" if @files == 1 ; 
-           $result = "d" if @files > 1 ; 
+           $result = "file" if $1 eq "-" ; 
+           $result = "dir" if $1 eq "d" ; 
     
-           $ftp->quit;
         } ; 
-       return $result unless $@ ; 
-       if ( $@ =~ /No such file/) {
-           WriteLog("FATAL: $@") ; 
-	   print $@ ; 
-           return undef ; 
-       } else {
-           WriteLog("WARNING: $@") ; 
-	   print $@ ; 
-       } 
-       sleep(4) ;
-       $try ++ ;
+        return $result unless $@ ; 
+
+        if ( $@ =~ /No such file/) {
+            WriteLog("FATAL: $@") ; 
+            print $@ ; 
+            return undef ; 
+        } 
+        $try ++ ;
+        sleep(2) ; 
     } 
     return $result ;   
 }
@@ -163,7 +207,7 @@ sub GetFtpUrlFileType {
 
 ## get file [gingko, ftp]
 sub GetFile {
-   my ($source, $deploy_path,$limit, $protocal, $args) = @_ ;
+   my ($source, $deploy_path,$limit, $protocal, $wget_args, $gingko_args,$file_type) = @_ ;
    my $cmd ; 
    $limit = $limit || 10 ; 
 
@@ -172,39 +216,30 @@ sub GetFile {
        my $ftp_url = TransScpUrlToFtpUrl($source) ; 
        my $local_dir = dirname($deploy_path) ; 
        system("mkdir -p $local_dir") ; 
-       if ( GetFtpUrlFileType($ftp_url) eq 'd' ) {
-           $cmd = "wget -q -r $ftp_url --limit-rate=$limit -P $deploy_path -nH -nd $args" ;
-       } elsif ( GetFtpUrlFileType($ftp_url) eq 'f' ) {
-           $cmd = "wget --limit-rate=$limit -q $ftp_url -O $deploy_path $args" ;
+       if( $file_type eq "" ) {
+           $file_type = GetFtpUrlFileType($ftp_url);
+       }
+       my $cut_dirs=0;
+       ++$cut_dirs while($ftp_url =~ m/\//g);
+       $cut_dirs = $cut_dirs - 2;
+       if ( $file_type eq "dir" ) {
+           system("rm -rf $deploy_path") ; 
+           system("mkdir -p $local_dir") ; 
+           $cmd = "wget -q -l0 -nH --cut-dirs=$cut_dirs --limit-rate=$limit  $wget_args -r $ftp_url -P $deploy_path";
+       } elsif ( $file_type eq "file" ) {
+           $cmd = "wget -q --limit-rate=$limit  $wget_args $ftp_url -O $deploy_path";
        } else {
            return undef; 
        }
        return !system($cmd) ;
    }
    elsif ( $protocal eq "gingko" ) {
-       $cmd = "gkocp -u 10 -d $limit -l ./gingko.log $source $deploy_path $args" ;
+       $cmd = "gkocp -u 50 -s 10 -d $limit -l ./gingko.log $source $deploy_path $gingko_args" ;
        return !system($cmd) ;
    }
    else {
        return 2 ;
    }
-}
-
-## caculate md5 of file
-sub CheckMd5 {
-    my ( $deploy_path, $md5_file ) = @_ ; 
-
-    my $basename = basename($deploy_path) ; 
-    my $dirname  = dirname($deploy_path) ; 
-    my $cmd ; 
-
-    if ( -f $deploy_path ) { 
-        $cmd = "cd $dirname && md5sum -c $md5_file" ; 
-    } elsif ( -d $deploy_path ) {
-        $cmd = "cd $deploy_path && cp ../$md5_file ./ && md5sum -c $md5_file" ; 
-    }
-
-    return !system("$cmd")  ; 
 }
 
 ## input a ftp url , output file size (integer) 
@@ -258,7 +293,7 @@ sub WriteLog {
     my ($msg) = @_ ; 
     chomp $msg ;  
     my $log_fh = IO::File->new ; 
-    $log_fh->open("../downloader.log",">>") ; 
+    $log_fh->open("./downloader.log",">>") ; 
     $log_fh->print(GetLogDate() . " " . $msg . "\n") ; 
     $log_fh->close ; 
 }
@@ -270,6 +305,40 @@ sub GetLogDate {
     return scalar $date ; 
 }
 
+sub CheckMd5 {
+    my ($item,$md5_file) = @_ ;
+
+    if ( -f $item ) {
+        my $ret = CheckFileMd5($item, $md5_file) ; 
+        return $ret ; 
+    } elsif ( -d $item ) {
+        if ( $md5_file =~ m{^/} ) {
+        } else {
+            $md5_file = $ENV{"PWD"}/$md5_file ; 
+        }
+        return !system("cd $item && md5sum -c $md5_file &>/dev/null") ; 
+    } else {
+        print "Fatal: $item not a file or directory\n" ; 
+        WriteLog("Fatal: $item not a file or directory\n") ;  
+        return undef ; 
+    }
+}
+
+sub CheckFileMd5 {
+    my ($file,$md5_file) = @_ ;
+    my $md5 ; 
+
+    my $file_fh = IO::File -> new("$file") ;
+    my $ctx = Digest::MD5 -> new ;
+
+    $ctx -> addfile($file_fh) ;
+    my $digest = $ctx -> hexdigest ;
+    $file_fh -> close ; 
+
+    $md5 = `head -n1 $md5_file | awk '{print \$1} '` ; 
+    chomp $md5 ; 
+    $digest eq $md5 ? return 1 : return undef ; 
+}
 
 1; 
 __END__
