@@ -64,6 +64,28 @@
 
 ### yaml文件格式介绍
 
+基本格式：
+
+    label:
+      type: [static or dynamic]
+      source: [scp-like path]
+      dest: [local path]
+
+例如：
+
+    nbm_plan_list.1:
+      type: static
+      source: data-im.baidu.com:/home/work/var/CI_DATA/im/static/nbm_plan_list.1/nbm_plan_list.1.1
+      deploy_path: ./data/adr/nbm_plan_list.1
+    nbm_plan_list_2_data:
+      type: dynamic
+      source: data-im.baidu.com:/home/work/var/CI_DATA/im/dynamic/nbm_plan_list_2_data/nbm_plan_list_2_data
+      deploy_path: ./data/adr/nbm_plan_list_2_data
+
+扩展字段：
+
+    postfix_command: [下载完数据后执行的后置命令]
+    version_control: [对下载的数据进行版本管理]
 
 ### 扩展参数介绍
 
