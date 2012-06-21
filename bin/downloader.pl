@@ -37,6 +37,10 @@ our $download_rate = 10 ;
 our $wget_args= "" ; 
 our $gingko_args= "" ; 
 our $is_check_md5=0 ; 
+our $through = "" ; 
+our $stream = "" ; 
+our $version_control = 0 ; 
+
 
 my $usage = <<END 
 usage: $self_name [options]
@@ -58,6 +62,9 @@ usage: $self_name [options]
     --check-md5           check md5
     --wget-args            
     --gingko-args          
+    --through             middle address ,ssh-like address: server:/path/name, when use --stream , should be use --through at the same time.
+    --stream              up|down . when use through , "up" to download from source to through addr, "down" to download from through addr to deploy path
+    --version-control     use this args to control file version. offen use in --stream=up
 END
 ;
 my $cmd_config = GetOptions(
@@ -75,6 +82,9 @@ my $cmd_config = GetOptions(
     "wget-args=s" => \$wget_args, 
     "gingko-args=s" => \$gingko_args, 
     "check-md5!" => \$is_check_md5 ,
+    "through=s" => \$through,
+    "stream=s" => \$stream,
+    "version-control!" => sub { $version_control = "yes" },
 ) ;
 
 if ( $threshold ) {
@@ -90,18 +100,38 @@ if ( $threshold ) {
 unless ( $yaml_file ) {
     print "Fatal: --yaml-file must be set.\n" ; 
     print $usage ; 
-    exit 111 ; 
+    exit 11 ; 
 }
 
 unless ( -f $yaml_file ) {
     print "Fatal: $yaml_file is not exist.\n" ; 
-    exit 113 ; 
+    exit 12 ; 
 }
 
-my $yaml ; 
+## 指定了--stream ,则必须有--through 
+if ( $stream ) {
+    unless ( $through ) {
+        print "FATAL: --through must be set.\n" ; 
+        exit 11 ; 
+    }
+    if ( $stream ne "up" and $stream ne "down" ) {
+        print "$stream \n" ; 
+        print "FATAL: --stream must be 'up' or 'down', but you set $stream \n" ; 
+        exit 11 ; 
+    }
+    unless ( ParseDynamicFile($through) ) {
+        print "FATAL: $through address wrong \n" ; 
+        exit 12
+    }
+}
+
 our $queue ; 
 our $DONE :shared = 0 ; 
-
+$SIG{USR1} = sub { $DONE = 1 ; } ;
+$SIG{TERM} = sub { $DONE = 1 ; } ;
+my $DIST_THREAD_STATUS :shared = '' ; 
+my %DIST_THREAD_STATUS :shared = () ; 
+my $yaml ; 
 
 if ( $daemon ) {
     my $pid_file = "./downloader.pid" ; 
@@ -111,6 +141,7 @@ if ( $daemon ) {
         exit 100 ; 
     }
 }
+
 do {
     
     exit 320 unless TestLabel("$yaml_file") ; 
@@ -129,37 +160,56 @@ do {
     ## 填充队列
     my @sorted_update_list = sort { $a->{"file_size"} <=> $b->{"file_size"} } @{$update_list} ; 
     foreach my $aData ( @sorted_update_list ) {
+        ## 如果有正在传输的数据，略过去
+        if ( grep {$DIST_THREAD_STATUS{$_} eq $$aData{"deploy_path"} } keys %DIST_THREAD_STATUS ) {
+            print "Warning: " . $$aData{"deploy_path"} . "is delivering, wait for next time.\n" ; 
+            WriteLog("Warning: " . $$aData{"deploy_path"} . "is delivering, wait for next time.\n") ; 
+            next ;
+        }
         $queue->enqueue($$aData{"deploy_path"}) unless $testing ;
     } 
     
-    ## 生成线程
-    for ( 1..$parallel_num ) {
-        threads->new(\&UpdateFile, \@sorted_update_list) ;
-    }
-    
-    ## 等待直到队列中的任务完成
-    while ( $queue->pending ) {;}
-    $DONE = 1 ;
-    
-    ## 回收线程
+    ## 生成线程,当已经有线程在分发时不再创建新的线程
+    my $threads_num = 0;  
     for my $thr (threads->list()) {
-        $thr->join();
+        $threads_num++ ; 
     }
-} while ( $daemon and (sleep $interval) ) ; 
-#######----------------------------------function-----------------------------#############3333
+    if ( $threads_num < 3 ) {
+        for ( 1..$parallel_num ) {
+            threads->new(\&UpdateFile, \@sorted_update_list) ;
+        }
+    }
+    
+} while ( $daemon and not $DONE and (sleep $interval) ) ; 
+
+## 等待直到队列中的任务完成,如果是daemon模式，则一直等待
+while ( $queue->pending ) {;}
+$daemon or $DONE = 1 ;
+    
+## 回收线程
+for my $thr (threads->list()) {
+    $thr->join();
+}
+
+#######----------------------------------function-----------------------------#############
 
 ## 从queue中取数据下载任务
 ## got task from thread:queue, output nothing
 sub UpdateFile {
     my ($update_list) = @_ ; 
     my $download_method = $method ; 
+    my $tid = threads->self->tid ; 
 
     while ( ! $DONE ) {
         while ( my $a_deploy_path = $queue->dequeue_nb() ) {
+            ## lock this file
+            Status( $tid => $a_deploy_path ) ;
             my $source = GetValueFromUpdateList($update_list, $a_deploy_path, "source") ; 
             my $file_size = GetValueFromUpdateList($update_list, $a_deploy_path, "file_size") ; 
             my $postfix_command= GetValueFromUpdateList($update_list, $a_deploy_path, "postfix_command") ; 
-            my $version_control = GetValueFromUpdateList($update_list, $a_deploy_path, "version_control") || "" ;
+           
+            ## 在data.yaml中或者在参数中指定了--version_control都有效
+            my $version_control = $version_control || "" ;
             if ( $threshold ) {
                 if ( $file_size < $threshold )  { 
                     $download_method = "ftp" ; 
@@ -201,6 +251,8 @@ sub UpdateFile {
                 $daemon ? next : exit 121 ;
             } 
             sleep(2) ; 
+            ## unlock file.
+            Status( $tid => '' ) ;
         }
     }
     return 1 ; 
@@ -223,6 +275,16 @@ sub GetUpdateFileList {
 
       my $source = $$a_data_ref{"source"} ; 
       my $deploy_path = $$a_data_ref{"deploy_path"} ; 
+ 
+      ## 处理有mfs中间层的情况,仅在动态数据中才存在这种情况
+      if ( $type eq "dynamic" ) {
+          if ( $stream eq "up" ) {
+              $deploy_path = GenMiddleAddress( $through, $source) ; 
+              $deploy_path =~ s/(.*):(.*)/$2/ ; 
+          } elsif ( $stream eq "down" ) {
+              $source = GenMiddleAddress( $through, $source ) ; 
+          }
+      }
       my $source_md5 ;
       $source =~ s/\/$// ;
       if( $type eq "dynamic" ) {
@@ -294,7 +356,7 @@ sub TestLabel {
     $fh->open("$file","<") ; 
     while(<$fh>) {
         chomp $_ ; 
-	$_ =~ s/\s*$// ; 
+        $_ =~ s/\s*$// ; 
         next if ( $_ =~ /^#+/ || $_ =~ /^\s*$/ ) ; 
         if( $_ !~ "^[- ]+") {
             if ( exists $hash->{$_}) {
@@ -390,7 +452,7 @@ sub TestDeployPath {
             if ( $path =~ m{/$test/} and $path ne "/$test/" )  {
                 print "Fatal: $path is under $test . \n" ; 
                 WriteLog("Fatal: $path is under $test . \n") ; 
-		exit 99 ; 
+                exit 99 ; 
             }
         }
     }
@@ -400,7 +462,7 @@ sub TestDeployPath {
        if ( $path =~ m{/$} ) {
            $wrong = 1 ; 
            print "Fatal: $path error , Can not end with '/' \n" ; 
-	   WriteLog("Fatal: $path error , Can not end with '/' \n") ; 
+           WriteLog("Fatal: $path error , Can not end with '/' \n") ; 
        }
     }
     $wrong and exit 87 ; 
@@ -409,3 +471,21 @@ sub TestDeployPath {
     WriteLog("Notice: Testing: Deploy Path ok. \n") ; 
     return 1 ; 
 }
+
+sub Status {
+    my $tid = shift ; 
+    lock $DIST_THREAD_STATUS ; 
+    ## 没有参数则为查询值，只需要返回目前的状态值就ok了
+    return $DIST_THREAD_STATUS{$tid} unless @_ ; 
+    ## 有参数
+    my $status = shift ; 
+    if ( $status ) {
+        $DIST_THREAD_STATUS{$tid} = $status ; 
+    }
+    else {
+        delete $DIST_THREAD_STATUS{$tid} ; 
+    }
+    ## 唤醒阻塞
+    cond_broadcast $DIST_THREAD_STATUS ; 
+}
+

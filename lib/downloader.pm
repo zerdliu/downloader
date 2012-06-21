@@ -7,7 +7,7 @@ $VERSION = '0.1.0' ;
 
 use Exporter;
 our @ISA = qw{ Exporter } ; 
-our @EXPORT = qw{ UpdateFileOrDir GetValueFromUpdateList ParseDynamicFile GetFileWithRetry CheckMd5 GetRemoteFileSize WriteLog CreatPidFile } ; 
+our @EXPORT = qw{ UpdateFileOrDir GetValueFromUpdateList ParseDynamicFile GetFileWithRetry CheckMd5 GetRemoteFileSize WriteLog CreatPidFile GenMiddleAddress} ; 
 our @EXPORT_OK = qw{ };
 
 use Data::Dumper ; 
@@ -338,6 +338,22 @@ sub CheckFileMd5 {
     $md5 = `head -n1 $md5_file | awk '{print \$1} '` ; 
     chomp $md5 ; 
     $digest eq $md5 ? return 1 : return undef ; 
+}
+
+sub GenMiddleAddress {
+    my ( $through_addr, $source_addr) = @_ ;
+    my $middle_address = $through_addr . "/" . basename($source_addr) . "/" . GenMd5Hash($source_addr) . "/" . basename($source_addr) ; 
+
+    return $middle_address ; 
+}
+
+sub GenMd5Hash {
+    my ( $data ) = @_ ; 
+    my $ctx = Digest::MD5->new;
+    $ctx->add($data);
+    my $digest = $ctx->hexdigest;
+    print $digest . "\n" ; 
+    return $digest ; 
 }
 
 1; 
