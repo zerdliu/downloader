@@ -40,7 +40,7 @@ our $is_check_md5=0 ;
 our $through = "" ; 
 our $stream = "" ; 
 our $version_control = 0 ; 
-
+our $delay_time = 0 ; 
 
 my $usage = <<END 
 usage: $self_name [options]
@@ -65,6 +65,7 @@ usage: $self_name [options]
     --through             middle address ,ssh-like address: server:/path/name, when use --stream , should be use --through at the same time.
     --stream              up|down . when use through , "up" to download from source to through addr, "down" to download from through addr to deploy path
     --version-control     use this args to control file version. offen use in --stream=up
+    --delay-time          delay some time before update files. default is 0 
 END
 ;
 my $cmd_config = GetOptions(
@@ -85,6 +86,7 @@ my $cmd_config = GetOptions(
     "through=s" => \$through,
     "stream=s" => \$stream,
     "version-control!" => sub { $version_control = "yes" },
+    "delay-time=i" => \$delay_time , 
 ) ;
 
 if ( $threshold ) {
@@ -125,12 +127,19 @@ if ( $stream ) {
     }
 }
 
+if ( $delay_time < 0 ) {
+      print "delay-time: $delay_time < 0 \n" ; 
+      exit 11 ; 
+}
+
 our $queue ; 
 our $DONE :shared = 0 ; 
 $SIG{USR1} = sub { $DONE = 1 ; } ;
 $SIG{TERM} = sub { $DONE = 1 ; } ;
 my $DIST_THREAD_STATUS :shared = '' ; 
 my %DIST_THREAD_STATUS :shared = () ; 
+my $DELAY_LOCK :shared = '' ; 
+my %DELAY_QUEUE :shared = () ; 
 my $yaml ; 
 
 if ( $daemon ) {
@@ -142,6 +151,10 @@ if ( $daemon ) {
     }
 }
 
+$yaml = LoadFile("$yaml_file") ; 
+$queue = Thread::Queue->new() ;
+threads->new(\&DelayManager) ; 
+
 do {
     
     exit 320 unless TestLabel("$yaml_file") ; 
@@ -150,15 +163,14 @@ do {
     exit 323 unless TestDeployPath("$yaml_file") ; 
     exit 0 if ( $testing ) ; 
     ## 解析配置文件，存储成通用数据结构
-    $yaml = LoadFile("$yaml_file") ; 
     
-    $queue = Thread::Queue->new() ;
     ## 标识线程是否退出
     $DONE = 0 ;
     
     my $update_list = GetUpdateFileList($yaml, $data_type) ; 
     ## 填充队列
     my @sorted_update_list = sort { $a->{"file_size"} <=> $b->{"file_size"} } @{$update_list} ; 
+    print Dumper \@sorted_update_list ; 
     foreach my $aData ( @sorted_update_list ) {
         ## 如果有正在传输的数据，略过去
         if ( grep {$DIST_THREAD_STATUS{$_} eq $$aData{"deploy_path"} } keys %DIST_THREAD_STATUS ) {
@@ -166,7 +178,26 @@ do {
             WriteLog("Warning: " . $$aData{"deploy_path"} . "is delivering, wait for next time.\n") ; 
             next ;
         }
-        $queue->enqueue($$aData{"deploy_path"}) unless $testing ;
+        #print Dumper $aData ;
+        ## 如果没有设置delay_time, 则直接插入分发队列
+        if ( $delay_time == 0 ) {
+            $queue->enqueue(GenMeta($aData)) unless $testing ;
+        ## 否则插入delay 队列
+        } else {
+            do {
+                 lock $DELAY_LOCK ; 
+                 print Dumper \%DELAY_QUEUE ; 
+                 if ( grep { $_ eq $$aData{"deploy_path"} } keys %DELAY_QUEUE ) {
+                     print "Warning: " . $$aData{"deploy_path"} . "is in delay queue, wait for next time. \n" ; 
+                     WriteLog("Warning: " . $$aData{"deploy_path"} . "is in delay queue, wait for next time. \n") ; 
+                     next ; 
+                 } else {
+                    $DELAY_QUEUE{$$aData{"deploy_path"}} = GenMeta($aData) ; 
+                    print "Notice: put " . $$aData{"deploy_path"} . " in delay queue. \n" ; 
+                    WriteLog("Notice: put " . $$aData{"deploy_path"} . " in delay queue. \n") ; 
+                }
+            }
+        }
     } 
     
     ## 生成线程,当已经有线程在分发时不再创建新的线程
@@ -176,7 +207,7 @@ do {
     }
     if ( $threads_num < 3 ) {
         for ( 1..$parallel_num ) {
-            threads->new(\&UpdateFile, \@sorted_update_list) ;
+            threads->new(\&UpdateFile) ;
         }
     }
     
@@ -196,17 +227,20 @@ for my $thr (threads->list()) {
 ## 从queue中取数据下载任务
 ## got task from thread:queue, output nothing
 sub UpdateFile {
-    my ($update_list) = @_ ; 
     my $download_method = $method ; 
     my $tid = threads->self->tid ; 
 
     while ( ! $DONE ) {
-        while ( my $a_deploy_path = $queue->dequeue_nb() ) {
+        while ( my $a_meta = $queue->dequeue_nb() ) {
             ## lock this file
+            print "meta: $a_meta\n" ; 
+            my $a_data = ParseMeta($a_meta) ; 
+            print Dumper $a_data ; 
+            my $a_deploy_path = $$a_data{"deploy_path"} ; 
             Status( $tid => $a_deploy_path ) ;
-            my $source = GetValueFromUpdateList($update_list, $a_deploy_path, "source") ; 
-            my $file_size = GetValueFromUpdateList($update_list, $a_deploy_path, "file_size") ; 
-            my $postfix_command= GetValueFromUpdateList($update_list, $a_deploy_path, "postfix_command") ; 
+            my $source = $$a_data{"source"} ; 
+            my $file_size = $$a_data{"file_size"} ; 
+            my $postfix_command = $$a_data{"postfix_command"} ; 
            
             ## 在data.yaml中或者在参数中指定了--version_control都有效
             my $version_control = $version_control || "" ;
@@ -325,6 +359,8 @@ sub GetUpdateFileList {
              $$a_data_ref{"file_size"} = $file_size ;
              $$a_data_ref{"source"} = $source ; 
              $$a_data_ref{"deploy_path"} = $deploy_path ; 
+             $$a_data_ref{"update_time"} = `date +"%s"` ; 
+             $$a_data_ref{"left_time"} = $delay_time ; 
              push (@result, $a_data_ref) ; 
          }
       } else {
@@ -489,3 +525,54 @@ sub Status {
     cond_broadcast $DIST_THREAD_STATUS ; 
 }
 
+sub GenMeta {
+    my ( $src ) = @_ ;
+    my $meta ;
+
+    foreach my $key (keys %{$src} ) {
+        my $value = $src -> {"$key"} ;
+        $meta .= "$key -> $value##" ;
+    }
+    return $meta ;
+}
+
+sub ParseMeta {
+    my ( $meta ) = @_ ;
+    my $hash_handle ;
+    my @array = split(/##/, $meta) ;
+    foreach ( @array ) {
+        $_ =~ /(.*) -> (.*)/ ;
+        my $key = $1 ;
+        my $value = $2 ;
+        $hash_handle-> {$key} = $value  ;
+    }
+    return $hash_handle ;
+}
+
+sub DelayManager {
+    my $checkinterval=2;
+
+    while( ! $DONE) {       
+        select(undef,undef,undef,$checkinterval);
+        do {       
+            lock $DELAY_LOCK ;
+            foreach my $deploy_name ( keys %DELAY_QUEUE ) {
+                my $meta = $DELAY_QUEUE{"$deploy_name"} ; 
+                my $a_data = ParseMeta($meta) ; 
+                my $update_time = $$a_data{"update_time"};
+                my $cur_time=`date +"%s"`;
+                chomp $cur_time;
+                my $left_time = $cur_time - $update_time;
+                $$a_data{"left_time"} = $left_time ;
+
+                if($left_time >= $delay_time) {# 延时时间到达，将该词表进行分发 
+                    print "$deploy_name 's delay time: $delay_time is up, put it into dist queue and delete it from worddict manager struct.\n";
+                    my $message = "NOTICE: $deploy_name 's delay time: $delay_time is up, put it into dist queue and delete it from worddict manager struct.";                                  
+                    WriteLog($message) ; 
+                    $queue->enqueue(GenMeta($a_data)) ;
+                    delete $DELAY_QUEUE{$deploy_name} ;
+                }
+            }
+        }
+    }
+}
